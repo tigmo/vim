@@ -25,20 +25,51 @@ Plugin 'sheerun/vim-polyglot'
 "Plugin 'aliev/vim-compiler-python'
 "Plugin 'Vimjas/vim-python-pep8-indent'
 Plugin 'vim-python/python-syntax'
+" Git integration
 Plugin 'tpope/vim-fugitive'
+" Git diff highlighting
+Plugin 'airblade/vim-gitgutter'
+" R support
+Plugin 'jalvesaq/Nvim-R'
+" Session management
+Plugin 'xolox/vim-misc'
+Plugin 'xolox/vim-session'
+" Undotree
+Plugin 'mbbill/undotree'
 " ...
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
 
+" undo files
+if has("persistent_undo")
+    let vim_path = expand('~/.vim/')
+    let target_path = expand('~/.vim/undodir')
+    if !isdirectory(vim_path)
+        call mkdir(vim_path, "", 0770)
+    endif
+    if !isdirectory(target_path)
+        call mkdir(target_path, "", 0700)
+    endif
+    let &undodir=target_path
+    set undofile
+endif
+
 " set mapleader to spacebar
 nnoremap <SPACE> <Nop>
 let mapleader=" "
+" set local mapleader to §
+nnoremap <§> <Nop>
+let maplocalleader="§"
+" activate mouse
+set mouse=a
 
+" Ctrl-C or :C clears search
 nnoremap <C-C> :noh<CR>
 :command C let @/=""
 
+" Window switching
 nnoremap <C-J> <C-W><C-J>
 nnoremap <C-K> <C-W><C-K>
 nnoremap <C-L> <C-W><C-L>
@@ -49,7 +80,10 @@ map <C-M>    :NERDTree<CR>
 " goto definition
 map <leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
 
+" Undotree hotkey
+nnoremap <F5> :UndotreeToggle<CR>
 
+set updatetime=100
 set nu
 " proper indentation
 au BufNewFile, BufRead *.py
@@ -78,4 +112,7 @@ let g:ycm_python_binary_path = 'python3'
 let g:ycm_auto_hover = ''
 
 let NERDTreeIgnore=['\.pyc$', '\~$'] "ignore files in NERDTree
+
+" map <- in R files
+let R_assign_map = '<C-s>'
 
