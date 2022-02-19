@@ -23,16 +23,22 @@ Plugin 'patstockwell/vim-monokai-tasty'
 " Airline
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
-"Plugin 'tmhedberg/SimpylFold'
-"Plugin 'Konfekt/FastFold'
+" Fold python code properly
+Plugin 'tmhedberg/SimpylFold'
+" Faster folding
+Plugin 'Konfekt/FastFold'
 Plugin 'ycm-core/YouCompleteMe'
 Plugin 'preservim/nerdtree'
 Plugin 'sheerun/vim-polyglot'
 "Plugin 'aliev/vim-compiler-python'
 "Plugin 'Vimjas/vim-python-pep8-indent'
 Plugin 'vim-python/python-syntax'
+" jupyter notebooks
+Plugin 'goerz/jupytext.vim'
 " R support
 Plugin 'jalvesaq/Nvim-R'
+" Execute code in REPL
+Plugin 'jpalardy/vim-slime'
 " fzf
 Plugin 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plugin 'junegunn/fzf.vim'
@@ -60,6 +66,7 @@ Plugin 'myusuf3/numbers.vim'
 call vundle#end()            " required
 filetype plugin indent on    " required
 
+
 " undo files
 if has("persistent_undo")
     if using_neovim
@@ -77,6 +84,18 @@ if has("persistent_undo")
     endif
     let &undodir=target_path
     set undofile
+endif
+
+" set target for piping code
+if using_neovim
+    let g:slime_target = "neovim"
+else 
+    let g:slime_target = "vimterminal"
+endif
+" configure slime correct when piping python
+let file_ext = expand('%:e')
+if file_ext == 'py' || file_ext == 'ipynb'
+    let g:slime_python_ipython = 1
 endif
 
 " set mapleader to spacebar
@@ -168,8 +187,8 @@ highlight SignifySignChange cterm=bold ctermbg=237  ctermfg=227
 " save as sudo
 ca w!! w !sudo tee "%"
 
-" keep cursor 3 lines away from screen border when scrolling
-set scrolloff=3
+" keep cursor 5 lines away from screen border when scrolling
+set scrolloff=5
 
 " Airline ------------------------------
 let g:airline_powerline_fonts = 1
