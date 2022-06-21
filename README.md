@@ -5,21 +5,18 @@ Personal vim scripts
 
 Clone
 [Vundle](https://github.com/VundleVim/Vundle.vim)
-into `~/.vim/bundle/Vundle.vim`
+into `~/.config/nvim/bundle/Vundle.vim`
 
-	 git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+	 git clone https://github.com/VundleVim/Vundle.vim.git ~/.config/nvim/bundle/Vundle.vim
 
-Open vim and run
+Clone neococ repo with the release branch
+[YCM](https://github.com/neoclide/coc.nvim)
+
+		git clone --branch release https://github.com/neoclide/coc.nvim.git ~/.config/nvim/bundle/coc.nvim
+
+
+Open nvim and run
 
 	:PluginInstall
 
-Install requirements for
-[YCM](https://github.com/ycm-core/YouCompleteMe)
 
-- `base-devel cmake python3`
-- `mono go nodejs npm jdk|jdk-openjdk`
-
-Install YCM
-
-	cd ~/.vim/bundle/YouCompleteMe
-	python3 install.py --all

@@ -27,7 +27,7 @@ Plugin 'vim-airline/vim-airline-themes'
 Plugin 'tmhedberg/SimpylFold'
 " Faster folding
 Plugin 'Konfekt/FastFold'
-Plugin 'ycm-core/YouCompleteMe'
+Plugin 'neoclide/coc.nvim'
 Plugin 'preservim/nerdtree'
 Plugin 'sheerun/vim-polyglot'
 "Plugin 'aliev/vim-compiler-python'
@@ -56,9 +56,12 @@ Plugin 'Raimondi/delimitMate'
 " surrounding helper
 Plugin 'tpope/vim-surround'
 " Relative numbering
-Plugin 'myusuf3/numbers.vim'
+"Plugin 'myusuf3/numbers.vim'
 " Nice icons in the file explorer and file type status line.
-"Plugin 'ryanoasis/vim-devicons'
+Plugin 'ryanoasis/vim-devicons'
+if using_neovim
+    Plugin 'mfussenegger/nvim-dap'
+endif
 
 " ...
 
@@ -99,16 +102,16 @@ if file_ext == 'py' || file_ext == 'ipynb'
 endif
 
 " set mapleader to spacebar
-nnoremap <SPACE> <Nop>
-let mapleader=" "
+noremap <SPACE> <Nop>
+let mapleader=' '
 " set local mapleader to §
 nnoremap <§> <Nop>
-let maplocalleader="§"
+let maplocalleader='§'
 " activate mouse
 set mouse=a
 
 " clear search result
-nnoremap <silent> <leader>/ :noh<CR>
+nnoremap <silent> <Leader>c :noh<CR>
 
 " Window switching
 nnoremap <C-J> <C-W><C-J>
@@ -117,15 +120,84 @@ nnoremap <C-L> <C-W><C-L>
 nnoremap <C-H> <C-W><C-H>
 " help/info
 nmap <leader>h <plug>(YCMHover)
-map <C-M>    :NERDTree<CR>
+map <C-M> :NERDTree<CR>
 " goto definition
-map <leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
+map <leader>g :YcmCompleter GoToDefinitionElseDeclaration<CR>
 
 " Undotree hotkey
 nnoremap <F5> :UndotreeToggle<CR>
 
-set updatetime=100
+" dap
+if using_neovim
+    lua <<EOF
+    local dap = require('dap')
+    dap.defaults.fallback.external_terminal = {
+        command = '/usr/bin/alacritty';
+        args = {'-e'}
+    }
+    dap.defaults.fallback.force_external_terminal = true
+    dap.adapters.lldb = {
+      type = 'executable',
+      command = '/usr/bin/lldb-vscode', -- adjust as needed
+      name = "lldb"
+    }
+    dap.configurations.cpp = {
+      {
+        name = "Launch",
+        type = "lldb",
+        request = "launch",
+        program = function()
+          return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = {},
+
+        -- 💀
+        -- if you change `runInTerminal` to true, you might need to change the yama/ptrace_scope setting:
+        --
+        --    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+        --
+        -- Otherwise you might get the following error:
+        --
+        --    Error on launch: Failed to attach to the target process
+        --
+        -- But you should be aware of the implications:
+        -- https://www.kernel.org/doc/html/latest/admin-guide/LSM/Yama.html
+
+        runInTerminal = false,
+
+        -- 💀
+        -- If you use `runInTerminal = true` and resize the terminal window,
+        -- lldb-vscode will receive a `SIGWINCH` signal which can cause problems
+        -- To avoid that uncomment the following option
+        -- See https://github.com/mfussenegger/nvim-dap/issues/236#issuecomment-1066306073
+        postRunCommands = {'process handle -p true -s false -n false SIGWINCH'}
+      },
+    }
+    -- If you want to use this for rust and c, add something like this:
+    --dap.configurations.c = dap.configurations.cpp
+    --dap.configurations.rust = dap.configurations.cpp
+
+EOF
+
+    nnoremap <leader>tp :lua require'dap'.toggle_breakpoint()<CR>
+    nnoremap <leader>db :lua require'dap'.continue()<CR>
+    nnoremap <F10> :lua require'dap'.step_over()<CR>
+    nnoremap <F11> :lua require'dap'.step_into()<CR>
+    nnoremap <leader>i :lua require'dap'.repl.open()<CR>
+endif
+
+set updatetime=300
 set nu
+if has("nvim-0.5.0") || has("patch-8.1.1564")
+    set signcolumn=number
+else
+    set signcolumn=yes
+endif
+
+
+
 " proper indentation
 au BufNewFile, BufRead *.py
     \ set tabstop=4
@@ -135,6 +207,13 @@ au BufNewFile, BufRead *.py
     \ set expandtab
     \ set autoindent
     \ set fileformat=unix
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2
+set textwidth=79
+set expandtab
+set autoindent
+set fileformat=unix
 " Mark extra whitespace
 au BufRead, BufNewFile * match BadWhitespace /\s\+$/
 " remove trailing whitespace on save
@@ -143,12 +222,68 @@ autocmd BufWritePre *.py,*.pyw,*.c,*.cc,*.cpp,*.h,*.java,*.md,*.sh,*.tex :%s/\s\
 
 let g:python_highlight_all = 1
 
-" close autocomplete window after tab
-let g:ycm_autoclose_preview_window_after_completion=1
-" set correct path for python. Works with venv
-let g:ycm_python_binary_path = 'python3'
-" disable docstring window auto-popup
-let g:ycm_auto_hover = ''
+let g:python3_host_prog = '/home/tiger/.pyenv/versions/neovim/bin/python'
+
+" -------------------- coc settings --------------------
+let g:coc_filetype_map = {'javascriptreact': '*.js'}
+function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+" Use tab for trigger completion with characters ahead and navigate.
+" NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
+" other plugin before putting this into your config.
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ CheckBackspace() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+" Use <c-space> to trigger completion.
+if has('nvim')
+  inoremap <silent><expr> <c-space> coc#refresh()
+else
+  inoremap <silent><expr> <c-@> coc#refresh()
+endif
+
+" Make <CR> auto-select the first completion item and notify coc.nvim to
+" format on enter, <cr> could be remapped by other vim plugin
+inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+" Use `[g` and `]g` to navigate diagnostics
+" Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" GoTo code navigation.
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Use K to show documentation in preview window.
+nnoremap <silent> K :call ShowDocumentation()<CR>
+
+function! ShowDocumentation()
+  if CocAction('hasProvider', 'hover')
+    call CocActionAsync('doHover')
+  else
+    call feedkeys('K', 'in')
+  endif
+endfunction
+
+" Highlight the symbol and its references when holding the cursor.
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+" Symbol renaming.
+nmap <leader>rn <Plug>(coc-rename)
+
+" Formatting selected code.
+xmap <leader>f  <Plug>(coc-format-selected)
+nmap <leader>f  <Plug>(coc-format-selected)
+
+" -------------------- end of coc settings --------------------
 
 let NERDTreeIgnore=['\.pyc$', '\~$'] "ignore files in NERDTree
 highlight! link NERDTreeFlags NERDTreeDir
